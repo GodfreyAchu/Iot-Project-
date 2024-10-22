@@ -1,0 +1,88 @@
+// Pin Definitions
+const int trigPin = 3;
+const int echoPin = 4;
+const int pirPin = 6; // PIR sensor pin
+const int redLEDPin = 8; // Red LED pin
+const int greenLEDPin = 9; // Green LED pin
+const int buzzerPin = 7; // Buzzer pin
+
+// Variables
+long duration;
+int distance;
+bool isRoomOccupied = false;
+
+void setup() {
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+  pinMode(pirPin, INPUT);
+  pinMode(redLEDPin, OUTPUT);
+  pinMode(greenLEDPin, OUTPUT);
+  pinMode(buzzerPin, OUTPUT);
+  Serial.begin(9600);
+}
+
+void loop() {
+  // Reading PIR Sensor
+  int pirState = digitalRead(pirPin);  // PIR output
+  
+  if (pirState == HIGH) {
+    isRoomOccupied = true; // Occupancy detected
+  } else {
+    isRoomOccupied = false; // No occupancy
+  }
+
+  // Ultrasonic Sensor Logic
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+  
+  duration = pulseIn(echoPin, HIGH);
+  distance = duration * 0.034 / 2; // Calculating the distance in cm
+  Serial.print("Distance: ");
+  Serial.println(distance);
+
+  // LED and Buzzer Control Logic based on distance and PIR
+  if (isRoomOccupied) {
+    // If room is occupied and distance is less than 200 cm
+    if (distance < 200) {
+      blinkRedLED(); // Blink red LED
+      tone(buzzerPin, 1000); // Turn on buzzer
+    }
+    else if (distance >= 200 && distance <= 300) {
+      blinkGreenLED(); // Blink green LED
+      noTone(buzzerPin); // Turn off buzzer
+      digitalWrite(redLEDPin, LOW); // Ensure red LED is off
+    }
+    else if (distance > 300) {
+      digitalWrite(greenLEDPin, HIGH); // Green LED ON
+      noTone(buzzerPin); // Turn off buzzer
+      digitalWrite(redLEDPin, LOW); // Ensure red LED is off
+    }
+  } 
+  else {
+    // Room is vacant, turn off LEDs and buzzer
+    digitalWrite(greenLEDPin, LOW);
+    digitalWrite(redLEDPin, LOW);
+    noTone(buzzerPin);  // Turn off the buzzer
+  }
+
+  delay(100); // Adjusted delay for better responsiveness
+}
+
+// Function to blink the Red LED (for distances < 200 cm)
+void blinkRedLED() {
+  digitalWrite(redLEDPin, HIGH);
+  delay(250);  // Shorter delay to make blinking more responsive
+  digitalWrite(redLEDPin, LOW);
+  delay(250);  // Shorter delay to make blinking more responsive
+}
+
+// Function to blink the Green LED (for distances between 200 cm to 300 cm)
+void blinkGreenLED() {
+  digitalWrite(greenLEDPin, HIGH);
+  delay(500);
+  digitalWrite(greenLEDPin, LOW);
+  delay(500);
+}
